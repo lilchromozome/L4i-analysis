@@ -3,24 +3,29 @@ library(ComplexHeatmap)
 library(tidyverse)
 library(circlize)
 library(grid)
+library(biomaRt)
 
 
-L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts_gene_symbol.csv")
+# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts.csv") #MAC
+L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts.csv")             #Windows
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
 L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5C3_E8", "H9_E8", "RUES01_E8", "RUES02_E8",
-                                   "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
+                             "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
 
-zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/zou_counts_gene_symbol.csv')
+# zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/zou_counts.csv') #MAC
+zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts.csv")               #Windows
 rownames(zou_embryo) <- zou_embryo$X
 zou_embryo$X <- NULL
 
-mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC_PARPKO_gene_symbol.csv')
+# mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC_PARPKO_gene_symbol.csv') #MAC
+mESC_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/mESC_PARP_KO.csv")                          #Windows
 rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/hmESC_KO_genes.csv')
+# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv')   #MAC
+ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
 
 ### L4i processing ----------------------------------
 samples <- colnames(L4i_counts)
@@ -41,9 +46,10 @@ dds <-DESeqDataSetFromMatrix(
   design = ~ cellline + condition
 )
 dds <- DESeq(dds)
+res <- results(dds, contrast = c("condition", "L4i", "E8"))
+res <- res[!is.na(res$padj) & res$padj < 0.05, ] # & abs(res$log2FoldChange) >= 1, ]
 mat <- counts(dds, normalized = TRUE)
-
-mat <- mat[rownames(mat) %in% ff$human_gene_symbol, , drop = FALSE]
+mat <- mat[rownames(res), , drop = FALSE]
 mat_scaled <- t(scale(t(mat)))
 mat_scaled <- mat_scaled[complete.cases(mat_scaled), , drop = FALSE]
 
@@ -66,8 +72,6 @@ zou_dds <-DESeqDataSetFromMatrix(
 )
 zou_dds <- DESeq(zou_dds)
 zou_mat <- counts(zou_dds, normalized = TRUE)
-
-zou_mat <- zou_mat[rownames(zou_mat) %in% ff$human_gene_symbol, , drop = FALSE]
 zou_mat_scaled <- t(scale(t(zou_mat)))
 zou_mat_scaled <- zou_mat_scaled[complete.cases(zou_mat_scaled), , drop = FALSE]
 
@@ -90,7 +94,6 @@ mESC_dds <-DESeqDataSetFromMatrix(
 mESC_dds <- DESeq(mESC_dds)
 mESC_mat <- counts(mESC_dds, normalized = TRUE)
 
-mESC_mat <- mESC_mat[rownames(mESC_mat) %in% ff$mouse_gene_symbol, , drop = FALSE]
 mESC_mat_scaled <- t(scale(t(mESC_mat)))
 mESC_mat_scaled <- mESC_mat_scaled[complete.cases(mESC_mat_scaled), , drop = FALSE]
 
@@ -114,16 +117,30 @@ label_fun <- function(labs) {
   gpar(fontsize = 8, col = col)
 }
 
-Zou_annot <- c('ICM', 'maternal', 'eight cell', 'preZGA')
+Zou_annot <- unique(ff$cluster_label)
+
+L4i_ids <- rownames(mat_scaled)
+zou_ids <- rownames(zou_mat_scaled)
+mESC_ids  <- rownames(mESC_mat_scaled)
+mESC_ids <- sub("\\..*$", "", mESC_ids)
+
+human_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+mouse_mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+
+map_m2h <- getLDS(
+  attributes = "ensembl_gene_id", filters = "ensembl_gene_id",
+  values = mESC_ids, mart = mouse_mart,
+  attributesL = "ensembl_gene_id", martL = human_mart
+)
 
 for (z in Zou_annot) {
-  
+
   df_pairs <- unique(ff[ff$Zou_annotation == z, c("human_gene_symbol", "mouse_gene_symbol")])
   df_pairs <- df_pairs[!is.na(df_pairs$human_gene_symbol) & !is.na(df_pairs$mouse_gene_symbol), ]
   
   keep <- df_pairs$human_gene_symbol %in% rownames(mat_scaled) &  # L4i
-          df_pairs$human_gene_symbol %in% rownames(zou_mat_scaled) &  # Zou
-          df_pairs$mouse_gene_symbol %in% rownames(mESC_mat_scaled) # Kraus
+    df_pairs$human_gene_symbol %in% rownames(zou_mat_scaled) &  # Zou
+    df_pairs$mouse_gene_symbol %in% rownames(mESC_mat_scaled) # Kraus
   df_pairs <- df_pairs[keep, ]
   
   # skip tiny/empty groups
@@ -204,20 +221,20 @@ for (z in Zou_annot) {
     check.names = FALSE
   )
   output_table <- rbind(output_table, df_out)
-
+  
   ### ComplexHeatmap ---------
   rowlabs_h <- rownames(heatmap_mat_L4i)
   rowlabs_h <- ifelse(rowlabs_h %in% interesting_genes, rowlabs_h, "")
   
   ht_zou <- Heatmap(heatmap_mat_zou, name = "Zou",
-                 show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
-                 row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, 
-                 column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
-  
-  ht_mESC <- Heatmap(heatmap_mat_mESC, name = "mESC",
                     show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
                     row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, 
                     column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
+  
+  ht_mESC <- Heatmap(heatmap_mat_mESC, name = "mESC",
+                     show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
+                     row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, 
+                     column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
   
   ht_L4i <- Heatmap(heatmap_mat_L4i, name = "L4i",
                     show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
