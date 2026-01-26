@@ -124,14 +124,18 @@ zou_ids <- rownames(zou_mat_scaled)
 mESC_ids  <- rownames(mESC_mat_scaled)
 mESC_ids <- sub("\\..*$", "", mESC_ids)
 
-human_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-mouse_mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+human_mart <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
+mouse_mart <- useEnsembl("ensembl", dataset = "mmusculus_gene_ensembl")
 
-map_m2h <- getLDS(
-  attributes = "ensembl_gene_id", filters = "ensembl_gene_id",
-  values = mESC_ids, mart = mouse_mart,
-  attributesL = "ensembl_gene_id", martL = human_mart
-)
+attributes <- c("ensembl_gene_id", "external_gene_name")
+
+# map_m2h <- getLDS(
+#   attributes = attributes, filters = "ensembl_gene_id",
+#   values = mESC_ids, mart = mouse_mart,
+#   attributesL = "ensembl_gene_id", martL = human_mart
+# )
+
+
 
 for (z in Zou_annot) {
 
