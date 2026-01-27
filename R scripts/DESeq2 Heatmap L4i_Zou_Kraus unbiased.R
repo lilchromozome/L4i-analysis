@@ -26,6 +26,7 @@ mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r
 
 # ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv')   #MAC
 ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
+ff$X <- NULL
 
 ### L4i processing ----------------------------------
 samples <- colnames(L4i_counts)
@@ -122,37 +123,48 @@ Zou_annot <- unique(ff$cluster_label)
 L4i_ids <- rownames(mat_scaled)
 zou_ids <- rownames(zou_mat_scaled)
 mESC_ids  <- rownames(mESC_mat_scaled)
-mESC_ids <- sub("\\..*$", "", mESC_ids)
 
-human_mart <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
-mouse_mart <- useEnsembl("ensembl", dataset = "mmusculus_gene_ensembl")
+human_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+mouse_mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
 
-attributes <- c("ensembl_gene_id", "external_gene_name")
+# mouse ensemble -> human ensembl
+map_m2h <- getBM(
+  attributes = c(
+    "ensembl_gene_id",
+    "external_gene_name",
+    "hsapiens_homolog_ensembl_gene",
+    "hsapiens_homolog_associated_gene_name",
+    "hsapiens_homolog_orthology_type"
+  ),
+  filters = "ensembl_gene_id",
+  values  = mESC_ids,
+  mart    = mouse_mart
+)
 
-# map_m2h <- getLDS(
-#   attributes = attributes, filters = "ensembl_gene_id",
-#   values = mESC_ids, mart = mouse_mart,
-#   attributesL = "ensembl_gene_id", martL = human_mart
-# )
+map_m2h <- map_m2h[
+  !is.na(map_m2h$ensembl_gene_id) &
+    !is.na(map_m2h$hsapiens_homolog_ensembl_gene) &
+    !is.na(map_m2h$hsapiens_homolog_associated_gene_name)&
+    map_m2h$ensembl_gene_id != "" &
+    map_m2h$hsapiens_homolog_ensembl_gene != "" &
+    map_m2h$hsapiens_homolog_associated_gene_name != "",
+]
+
 
 
 
 for (z in Zou_annot) {
-
-  df_pairs <- unique(ff[ff$Zou_annotation == z, c("human_gene_symbol", "mouse_gene_symbol")])
-  df_pairs <- df_pairs[!is.na(df_pairs$human_gene_symbol) & !is.na(df_pairs$mouse_gene_symbol), ]
+  cluster_genes <- ff$gene[ff$cluster_label == z]
+  gene_set <- map_m2h[map_m2h$hsapiens_homolog_associated_gene_name %in% cluster_genes, ]
   
-  keep <- df_pairs$human_gene_symbol %in% rownames(mat_scaled) &  # L4i
-    df_pairs$human_gene_symbol %in% rownames(zou_mat_scaled) &  # Zou
-    df_pairs$mouse_gene_symbol %in% rownames(mESC_mat_scaled) # Kraus
-  df_pairs <- df_pairs[keep, ]
+  gene_set <- gene_set[gene_set$hsapiens_homolog_ensembl_gene %in% rownames(mat_scaled) &
+              gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
+              gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
   
-  # skip tiny/empty groups
-  if (length(df_pairs) < 2) next
   
-  sub_L4i <- mat_scaled[df_pairs$human_gene_symbol, , drop = FALSE]
-  sub_zou <- zou_mat_scaled[df_pairs$human_gene_symbol, , drop = FALSE]
-  sub_mESC <- mESC_mat_scaled[df_pairs$mouse_gene_symbol, , drop = FALSE]
+  sub_L4i <- mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
+  sub_zou <- zou_mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
+  sub_mESC <- mESC_mat_scaled[gene_set$ensembl_gene_id, , drop = FALSE]
   
   # row-scale (relative per gene)
   sub_L4i_scaled <- t(scale(t(sub_L4i)))
@@ -189,45 +201,39 @@ for (z in Zou_annot) {
   )
   
   heatmap_mat_mESC <- cbind(
-    PARPKO = rowMeans(sub_mESC_scaled[, PARPKO_cols]),
-    WT = rowMeans(sub_mESC_scaled[, WT_cols])
+    WT = rowMeans(sub_mESC_scaled[, WT_cols]),
+    PARPKO = rowMeans(sub_mESC_scaled[, PARPKO_cols])
   )
   
+
   #maintain same order
-  ord_genes_h <- rownames(heatmap_mat_L4i[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE), , drop=FALSE])
-  heatmap_mat_L4i <- heatmap_mat_L4i[ord_genes_h, , drop = FALSE]
-  heatmap_mat_zou <- heatmap_mat_zou[ord_genes_h, , drop = FALSE]
-  
-  map_h2m <- setNames(ff$mouse_gene_symbol, ff$human_gene_symbol)
-  ord_genes_m <- unname(map_h2m[ord_genes_h])
-  ord_genes_m <- ord_genes_m[ord_genes_m %in% rownames(sub_mESC)]
-  heatmap_mat_mESC <- cbind(
-    WT     = rowMeans(sub_mESC[, WT_cols,     drop = FALSE]),
-    PARPKO = rowMeans(sub_mESC[, PARPKO_cols, drop = FALSE])
-  )
-  heatmap_mat_mESC <- heatmap_mat_mESC[ord_genes_m, , drop = FALSE]
+  target_order <- rownames(heatmap_mat_L4i)[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE)]
+  ordered_gene_set <- gene_set[match(target_order, gene_set$hsapiens_homolog_ensembl_gene), ]
+  heatmap_mat_L4i <- heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
+  heatmap_mat_zou <- heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
+  heatmap_mat_mESC <- heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, , drop = FALSE]
   
   ### build per-gene output table (same ordering as the heatmaps) -------
   df_out <- data.frame(
-    human_gene_name = ord_genes_h,
-    mouse_gene_name = ord_genes_m,
+    human_gene_name = ordered_gene_set$hsapiens_homolog_associated_gene_name,
+    mouse_gene_name = ordered_gene_set$external_gene_name,
     zou_annotation  = z,
-    zygote  = heatmap_mat_zou[ord_genes_h, "zygote"],
-    twoC    = heatmap_mat_zou[ord_genes_h, "twoC"],
-    fourC   = heatmap_mat_zou[ord_genes_h, "fourC"],
-    eightC  = heatmap_mat_zou[ord_genes_h, "eightC"],
-    ICM     = heatmap_mat_zou[ord_genes_h, "ICM"],
-    E8      = heatmap_mat_L4i[ord_genes_h, "E8"],
-    L4i     = heatmap_mat_L4i[ord_genes_h, "L4i"],
-    WT_mESC     = heatmap_mat_mESC[ord_genes_m, "WT"],
-    PARPKO_mESC = heatmap_mat_mESC[ord_genes_m, "PARPKO"],
+    zygote  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "zygote"],
+    twoC    = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "twoC"],
+    fourC   = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "fourC"],
+    eightC  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "eightC"],
+    ICM     = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "ICM"],
+    E8      = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "E8"],
+    L4i     = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "L4i"],
+    WT_mESC     = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "WT"],
+    PARPKO_mESC = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "PARPKO"],
     row.names = NULL,
     check.names = FALSE
   )
   output_table <- rbind(output_table, df_out)
   
   ### ComplexHeatmap ---------
-  rowlabs_h <- rownames(heatmap_mat_L4i)
+  rowlabs_h <- gene_set$hsapiens_homolog_associated_gene_name
   rowlabs_h <- ifelse(rowlabs_h %in% interesting_genes, rowlabs_h, "")
   
   ht_zou <- Heatmap(heatmap_mat_zou, name = "Zou",
