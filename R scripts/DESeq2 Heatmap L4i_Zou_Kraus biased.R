@@ -95,7 +95,7 @@ mESC_dds <-DESeqDataSetFromMatrix(
 mESC_dds <- DESeq(mESC_dds)
 mESC_mat <- counts(mESC_dds, normalized = TRUE)
 m_res <- results(mESC_dds, contrast = c("m_celltype", "WT", "PARPKO"))
-m_res <- m_res[!is.na(m_res$padj) & m_res$log2FoldChange <= 0, ]
+m_res <- subset(m_res, log2FoldChange <= 0)
 mESC_mat <- mESC_mat[rownames(m_res), , drop=FALSE]
 
 mESC_mat_scaled <- t(scale(t(mESC_mat)))

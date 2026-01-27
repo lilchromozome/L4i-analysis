@@ -48,7 +48,7 @@ dds <-DESeqDataSetFromMatrix(
 )
 dds <- DESeq(dds)
 res <- results(dds, contrast = c("condition", "L4i", "E8"))
-res <- res[!is.na(res$padj) & res$padj < 0.05, ] # & res$log2FoldChange >= 1, ]
+res <- res[!is.na(res$padj) & res$padj < 0.05 & res$log2FoldChange >= 0, ]
 mat <- counts(dds, normalized = TRUE)
 mat <- mat[rownames(res), , drop = FALSE]
 mat_scaled <- t(scale(t(mat)))
