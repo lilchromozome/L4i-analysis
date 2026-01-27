@@ -183,21 +183,21 @@ for (z in Zou_annot) {
   WT_cols <- grepl("WT", colnames(sub_mESC))
   
   heatmap_mat_L4i <- cbind(
-    E8  = rowSums(sub_L4i[, E8_cols]),
-    L4i = rowSums(sub_L4i[, L4i_cols])
+    E8  = rowMeans(sub_L4i[, E8_cols]),
+    L4i = rowMeans(sub_L4i[, L4i_cols])
   )
   
   heatmap_mat_zou <- cbind(
-    zygote  = rowSums(sub_zou[, zygote_cols]),
-    twoC = rowSums(sub_zou[, twoC_cols]),
-    fourC = rowSums(sub_zou[, fourC_cols]),
-    eightC = rowSums(sub_zou[, eightC_cols]),
-    ICM = rowSums(sub_zou[, ICM_cols])
+    zygote  = rowMeans(sub_zou[, zygote_cols]),
+    twoC = rowMeans(sub_zou[, twoC_cols]),
+    fourC = rowMeans(sub_zou[, fourC_cols]),
+    eightC = rowMeans(sub_zou[, eightC_cols]),
+    ICM = rowMeans(sub_zou[, ICM_cols])
   )
   
   heatmap_mat_mESC <- cbind(
-    WT = rowSums(sub_mESC[, WT_cols]),
-    PARPKO = rowSums(sub_mESC[, PARPKO_cols])
+    WT = rowMeans(sub_mESC[, WT_cols]),
+    PARPKO = rowMeans(sub_mESC[, PARPKO_cols])
   )
   
   
