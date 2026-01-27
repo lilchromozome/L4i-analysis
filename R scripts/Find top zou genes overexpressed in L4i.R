@@ -37,6 +37,20 @@ L4i_mat <- L4i_mat[complete.cases(L4i_mat), , drop = FALSE]
 
 # ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv') #MAC
 ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
+# 
+# cluster_map <- c(
+#   "1" = "maternal_1C2C",
+#   "2" = "ICM",
+#   "3" = "four_cell",
+#   "4" = "hESC",
+#   "5" = "eight_cell",
+#   "6" = "maternal_oocyte"
+# )
+# ff$cluster_label <- cluster_map[as.character(ff$ph.kmeans.cluster)]
+# ff$X <- NULL
+# write.csv(ff,"~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv" )
+
+
 ### https://humantfs.ccbr.utoronto.ca/download.php 
 # tf <- read.delim('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i-analysis/TF_names_v_1.01.txt') #MAC
 tf <- read.delim('~/Dr. Z lab/L4i RNA seq/L4i-analysis/TF_names_v_1.01.txt')

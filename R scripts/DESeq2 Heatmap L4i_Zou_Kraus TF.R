@@ -28,6 +28,17 @@ mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r
 ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
 ff$X <- NULL
 
+### TF list ------------------------------------
+tf <- read.delim('~/Dr. Z lab/L4i RNA seq/L4i-analysis/TF_names_v_1.01.txt')
+tfs_to_add <- c('TPRXL', 'TPRX2', 'CPHXL', 'CPHXL2', 'DUXB',
+                "FOXQ1","RUNX1","TBXT","MIXL1","HOXA1","EBF1","EBF2","HOXD8","HOXA7",
+                "HOXD10","HOXA2","FOXD4","GBX2","GATA6","HOXC8","HOXB8","HOXA5","HOXB2",
+                "DLX4","GATA5","FOXA2","CDX2","GATA4","SP5","SOX17","FOXE1","HOXB3",
+                "HOXB4","GATA3","HAND1","HOXB13")
+colnames(tf)[1] <- "tf"
+tf <- rbind(tf, data.frame(tf = tfs_to_add))
+tf <- unique(tf)
+
 ### L4i processing ----------------------------------
 samples <- colnames(L4i_counts)
 cellline <- sub("_(E8|L4i)$", "", samples)
@@ -99,27 +110,7 @@ mESC_mat_scaled <- t(scale(t(mESC_mat)))
 mESC_mat_scaled <- mESC_mat_scaled[complete.cases(mESC_mat_scaled), , drop = FALSE]
 
 
-### Plot Heatmaps ------------------
-ht_list <- NULL
-row_blocks <- list()
-output_table <- data.frame()
-
-interesting_genes <- c(
-  "FOXQ1","RUNX1","TBXT","MIXL1","HOXA1","EBF1","EBF2","HOXD8","HOXA7",
-  "HOXD10","HOXA2","FOXD4","GBX2","GATA6","HOXC8","HOXB8","HOXA5","HOXB2",
-  "DLX4","GATA5","FOXA2","CDX2","GATA4","SP5","SOX17","FOXE1","HOXB3",
-  "HOXB4","GATA3","HAND1","HOXB13"
-)
-
-
-label_fun <- function(labs) {
-  labs <- as.character(labs)
-  col <- ifelse(labs %in% interesting_genes, "black", "transparent")
-  gpar(fontsize = 8, col = col)
-}
-
-Zou_annot <- unique(ff$cluster_label)
-
+### m2h mapping -------------------------
 L4i_ids <- rownames(mat_scaled)
 zou_ids <- rownames(zou_mat_scaled)
 mESC_ids  <- rownames(mESC_mat_scaled)
@@ -151,15 +142,35 @@ map_m2h <- map_m2h[
 ]
 
 
+### Plot Heatmaps ------------------
+ht_list <- NULL
+row_blocks <- list()
+output_table <- data.frame()
 
+interesting_genes <- c(
+  "FOXQ1","RUNX1","TBXT","MIXL1","HOXA1","EBF1","EBF2","HOXD8","HOXA7",
+  "HOXD10","HOXA2","FOXD4","GBX2","GATA6","HOXC8","HOXB8","HOXA5","HOXB2",
+  "DLX4","GATA5","FOXA2","CDX2","GATA4","SP5","SOX17","FOXE1","HOXB3",
+  "HOXB4","GATA3","HAND1","HOXB13"
+)
+
+
+label_fun <- function(labs) {
+  labs <- as.character(labs)
+  col <- ifelse(labs %in% interesting_genes, "black", "transparent")
+  gpar(fontsize = 8, col = col)
+}
+
+Zou_annot <- unique(ff$cluster_label)
 
 for (z in Zou_annot) {
   cluster_genes <- ff$gene[ff$cluster_label == z]
+  cluster_genes <- cluster_genes[cluster_genes %in% tf$tf]
   gene_set <- map_m2h[map_m2h$hsapiens_homolog_associated_gene_name %in% cluster_genes, ]
   
   gene_set <- gene_set[gene_set$hsapiens_homolog_ensembl_gene %in% rownames(mat_scaled) &
-              gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
-              gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
+                         gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
+                         gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
   
   
   sub_L4i <- mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
@@ -197,7 +208,7 @@ for (z in Zou_annot) {
     PARPKO = rowSums(sub_mESC[, PARPKO_cols])
   )
   
-
+  
   #maintain same order
   target_order <- rownames(heatmap_mat_L4i)[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE)]
   ordered_gene_set <- gene_set[match(target_order, gene_set$hsapiens_homolog_ensembl_gene), ]
