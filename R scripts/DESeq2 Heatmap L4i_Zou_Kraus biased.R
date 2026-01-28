@@ -6,26 +6,34 @@ library(grid)
 library(biomaRt)
 
 
-# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts.csv") #MAC
-L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts.csv")             #Windows
+L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/L4i_counts.csv") #MAC
+# L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts.csv")             #Windows
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
 L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5C3_E8", "H9_E8", "RUES01_E8", "RUES02_E8",
                              "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
 
-# zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/zou_counts.csv') #MAC
-zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts.csv")               #Windows
+XAV_ESC <- read_excel("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/GSE99202_RNASeq1_count.xlsx")
+XAV_ESC <- as.data.frame(XAV_ESC)
+XAV_ESC$Gene <- sub("\\|.*$", "", XAV_ESC$Gene)
+rownames(XAV_ESC) <- make.unique(XAV_ESC$Gene)
+XAV_ESC$Gene <- NULL
+
+
+
+zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/zou_counts.csv') #MAC
+# zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts.csv")               #Windows
 rownames(zou_embryo) <- zou_embryo$X
 zou_embryo$X <- NULL
 
-# mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC_PARPKO_gene_symbol.csv') #MAC
-mESC_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/mESC_PARP_KO.csv")                          #Windows
+mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/mESC_PARP_KO.csv') #MAC
+# mESC_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/mESC_PARP_KO.csv")                          #Windows
 rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_RNAseq_withoocyte_k6.txt')   #MAC
-ff <-  read.delim("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt") # Windows
+ff <- read.delim('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt')   #MAC
+# ff <-  read.delim("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt") # Windows
 ff <- ff %>% rename(ICM = cluster1, maternal_oocyte = cluster2, maternal_1C_2C= cluster3, hESC=cluster4, four_cell=cluster5, eight_cell=cluster6)
 
 ### L4i processing ----------------------------------
@@ -48,7 +56,7 @@ dds <-DESeqDataSetFromMatrix(
 )
 dds <- DESeq(dds)
 res <- results(dds, contrast = c("condition", "L4i", "E8"))
-res <- res[!is.na(res$padj) & res$padj < 0.05 & res$log2FoldChange >= 0, ]
+res <- res[!is.na(res$padj) & res$padj < 0.05, ]
 mat <- counts(dds, normalized = TRUE)
 mat <- mat[rownames(res), , drop = FALSE]
 mat_scaled <- t(scale(t(mat)))
@@ -95,12 +103,37 @@ mESC_dds <-DESeqDataSetFromMatrix(
 mESC_dds <- DESeq(mESC_dds)
 mESC_mat <- counts(mESC_dds, normalized = TRUE)
 
-m_res <- results(mESC_dds, contrast = c("m_celltype", "WT", "PARPKO"))
-m_res <- m_res[!is.na(m_res$padj) & m_res$padj < 0.05 & m_res$log2FoldChange < 0, ]
+m_res <- results(mESC_dds, contrast = c("m_celltype", "PARPKO", "WT"))
+m_res <- m_res[!is.na(m_res$padj) & m_res$padj < 0.05, ]
 mESC_mat <- mESC_mat[rownames(m_res), , drop = FALSE]
 
 mESC_mat_scaled <- t(scale(t(mESC_mat)))
 mESC_mat_scaled <- mESC_mat_scaled[complete.cases(mESC_mat_scaled), , drop = FALSE]
+
+
+### XAV treated ESC ----------------------
+xav_samples <- colnames(XAV_ESC)
+treatment <- c("WT", "WT", "XAV_treated", "XAV_treated")
+rep <- c("r1", "r2", "r1", "r2")
+
+xav_coldata <- data.frame(
+  treatment = factor(treatment),
+  rep = factor(rep),
+  row.names = xav_samples
+)
+
+xav_dds <-DESeqDataSetFromMatrix(
+  countData = XAV_ESC,
+  colData = xav_coldata,
+  design = ~ treatment + rep
+)
+xav_dds <- DESeq(xav_dds)
+xav_res <- results(xav_dds, contrast = c("treatment", "XAV_treated", "WT"))
+xav_res <- xav_res[!is.na(xav_res$padj), ]
+xav_mat <- counts(xav_dds, normalized = TRUE)
+xav_mat <- xav_mat[rownames(xav_res), , drop = FALSE]
+xav_mat <- t(scale(t(xav_mat)))
+xav_mat <- xav_mat[complete.cases(xav_mat), , drop = FALSE]
 
 
 ### Plot Heatmaps ------------------
@@ -163,12 +196,14 @@ for (z in Zou_annot) {
   
   gene_set <- gene_set[gene_set$hsapiens_homolog_ensembl_gene %in% rownames(mat_scaled) &
                          gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
-                         gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
+                         gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled) &
+                         gene_set$hsapiens_homolog_associated_gene_name %in% rownames(xav_mat), ]
   
   
   sub_L4i <- mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   sub_zou <- zou_mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   sub_mESC <- mESC_mat_scaled[gene_set$ensembl_gene_id, , drop = FALSE]
+  sub_xav <- xav_mat[gene_set$hsapiens_homolog_associated_gene_name, , drop = FALSE]
   
   
   E8_cols  <- grepl("_E8$", colnames(sub_L4i))
@@ -182,6 +217,10 @@ for (z in Zou_annot) {
   
   PARPKO_cols <- grepl("^PARPKO", colnames(sub_mESC))
   WT_cols <- grepl("WT", colnames(sub_mESC))
+  
+  XAV_WT <- grepl("untreated", colnames(sub_xav))
+  XAV_treated <- grepl("XV50", colnames(sub_xav))
+  
   
   heatmap_mat_L4i <- cbind(
     E8  = rowMeans(sub_L4i[, E8_cols]),
@@ -201,32 +240,37 @@ for (z in Zou_annot) {
     PARPKO = rowMeans(sub_mESC[, PARPKO_cols])
   )
   
+  heatmap_mat_XAV <- cbind(
+    WT = rowMeans(sub_xav[, XAV_WT]),
+    XAV_treated = rowMeans(sub_xav[, XAV_treated])
+  )
   
   #maintain same order
-  target_order <- rownames(heatmap_mat_L4i)[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE)]
-  ordered_gene_set <- gene_set[match(target_order, gene_set$hsapiens_homolog_ensembl_gene), ]
+  target_order <- rownames(heatmap_mat_mESC)[order(heatmap_mat_mESC[, "PARPKO"], decreasing = TRUE)]
+  ordered_gene_set <- gene_set[match(target_order, gene_set$ensembl_gene_id), ]
   heatmap_mat_L4i <- heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   heatmap_mat_zou <- heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   heatmap_mat_mESC <- heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, , drop = FALSE]
+  heatmap_mat_XAV <- heatmap_mat_XAV[ordered_gene_set$hsapiens_homolog_associated_gene_name, , drop=FALSE]
   
-  ### build per-gene output table (same ordering as the heatmaps) -------
-  df_out <- data.frame(
-    human_gene_name = ordered_gene_set$hsapiens_homolog_associated_gene_name,
-    mouse_gene_name = ordered_gene_set$external_gene_name,
-    zou_annotation  = z,
-    zygote  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "zygote"],
-    twoC    = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "twoC"],
-    fourC   = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "fourC"],
-    eightC  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "eightC"],
-    ICM     = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "ICM"],
-    E8      = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "E8"],
-    L4i     = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "L4i"],
-    WT_mESC     = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "WT"],
-    PARPKO_mESC = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "PARPKO"],
-    row.names = NULL,
-    check.names = FALSE
-  )
-  output_table <- rbind(output_table, df_out)
+  # ### build per-gene output table (same ordering as the heatmaps) -------
+  # df_out <- data.frame(
+  #   human_gene_name = ordered_gene_set$hsapiens_homolog_associated_gene_name,
+  #   mouse_gene_name = ordered_gene_set$external_gene_name,
+  #   zou_annotation  = z,
+  #   zygote  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "zygote"],
+  #   twoC    = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "twoC"],
+  #   fourC   = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "fourC"],
+  #   eightC  = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "eightC"],
+  #   ICM     = heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, "ICM"],
+  #   E8      = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "E8"],
+  #   L4i     = heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, "L4i"],
+  #   WT_mESC     = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "WT"],
+  #   PARPKO_mESC = heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, "PARPKO"],
+  #   row.names = NULL,
+  #   check.names = FALSE
+  # )
+  # output_table <- rbind(output_table, df_out)
   
   ### ComplexHeatmap ---------
   rowlabs_h <- gene_set$hsapiens_homolog_associated_gene_name
@@ -246,6 +290,11 @@ for (z in Zou_annot) {
                     show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
                     row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, 
                     column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
+  ht_XAV <- Heatmap(heatmap_mat_XAV, name = "XAV_treatment",
+                    show_row_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
+                    row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, 
+                    column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
+
   
   # labels: only interesting genes, others blank
   rowlabs_h <- ordered_gene_set$hsapiens_homolog_associated_gene_name
@@ -262,7 +311,12 @@ for (z in Zou_annot) {
     width = unit(2, "cm")
   )
   
-  row_block <- ht_zou + ht_mESC + ht_L4i + right_anno
-  draw(row_block, ht_gap = unit(2, "mm"))
+  row_block <- ht_zou + ht_mESC + ht_L4i + ht_XAV + right_anno
+  draw(
+    row_block, 
+    ht_gap = unit(2, "mm"),
+    column_title = paste0(z, ": unbiased"),
+    column_title_gp = gpar(fontsize = 16, fontface = "bold")
+  )
 }
-# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/output_table.csv')
+# write_xlsx(output_table, 'C:/Users/willllllli/Documents/Dr. Z lab/L4i RNA seq/L4i-analysis/output_table.xlsx')
