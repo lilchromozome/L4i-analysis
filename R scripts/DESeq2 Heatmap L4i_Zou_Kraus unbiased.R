@@ -24,9 +24,9 @@ rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv')   #MAC
-ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
-ff$X <- NULL
+# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_RNAseq_withoocyte_k6.txt')   #MAC
+ff <-  read.delim("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt") # Windows
+ff <- ff %>% rename(ICM = cluster1, maternal_oocyte = cluster2, maternal_1C_2C= cluster3, hESC=cluster4, four_cell=cluster5, eight_cell=cluster6)
 
 ### L4i processing ----------------------------------
 samples <- colnames(L4i_counts)
@@ -48,7 +48,7 @@ dds <-DESeqDataSetFromMatrix(
 )
 dds <- DESeq(dds)
 res <- results(dds, contrast = c("condition", "L4i", "E8"))
-res <- res[!is.na(res$padj) & res$padj < 0.05 & res$log2FoldChange >= 0, ]
+res <- res[!is.na(res$padj) & res$padj < 0.05, ]
 mat <- counts(dds, normalized = TRUE)
 mat <- mat[rownames(res), , drop = FALSE]
 mat_scaled <- t(scale(t(mat)))
@@ -95,6 +95,10 @@ mESC_dds <-DESeqDataSetFromMatrix(
 mESC_dds <- DESeq(mESC_dds)
 mESC_mat <- counts(mESC_dds, normalized = TRUE)
 
+m_res <- results(mESC_dds, contrast = c("m_celltype", "PARPKO", "WT"))
+m_res <- m_res[!is.na(m_res$padj) & m_res$padj < 0.05, ]
+mESC_mat <- mESC_mat[rownames(m_res), , drop = FALSE]
+
 mESC_mat_scaled <- t(scale(t(mESC_mat)))
 mESC_mat_scaled <- mESC_mat_scaled[complete.cases(mESC_mat_scaled), , drop = FALSE]
 
@@ -118,7 +122,7 @@ label_fun <- function(labs) {
   gpar(fontsize = 8, col = col)
 }
 
-Zou_annot <- unique(ff$cluster_label)
+Zou_annot <- colnames(ff)
 
 L4i_ids <- rownames(mat_scaled)
 zou_ids <- rownames(zou_mat_scaled)
@@ -154,7 +158,7 @@ map_m2h <- map_m2h[
 
 
 for (z in Zou_annot) {
-  cluster_genes <- ff$gene[ff$cluster_label == z]
+  cluster_genes <- ff[[z]]
   gene_set <- map_m2h[map_m2h$hsapiens_homolog_associated_gene_name %in% cluster_genes, ]
   
   gene_set <- gene_set[gene_set$hsapiens_homolog_ensembl_gene %in% rownames(mat_scaled) &
@@ -259,6 +263,11 @@ for (z in Zou_annot) {
   )
   
   row_block <- ht_zou + ht_mESC + ht_L4i + right_anno
-  draw(row_block, ht_gap = unit(2, "mm"))
+  draw(
+    row_block, 
+    ht_gap = unit(2, "mm"),
+    column_title = paste0(z, ": unbiased"),
+    column_title_gp = gpar(fontsize = 16, fontface = "bold")
+    )
 }
-# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/output_table.csv')
+write_xlsx(output_table, 'C:/Users/willllllli/Documents/Dr. Z lab/L4i RNA seq/L4i-analysis/output_table.xlsx')
