@@ -246,8 +246,8 @@ for (z in Zou_annot) {
   )
   
   #maintain same order
-  target_order <- rownames(heatmap_mat_mESC)[order(heatmap_mat_mESC[, "PARPKO"], decreasing = TRUE)]
-  ordered_gene_set <- gene_set[match(target_order, gene_set$ensembl_gene_id), ]
+  target_order <- rownames(heatmap_mat_L4i)[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE)]
+  ordered_gene_set <- gene_set[match(target_order, gene_set$hsapiens_homolog_ensembl_gene), ]
   heatmap_mat_L4i <- heatmap_mat_L4i[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   heatmap_mat_zou <- heatmap_mat_zou[ordered_gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
   heatmap_mat_mESC <- heatmap_mat_mESC[ordered_gene_set$ensembl_gene_id, , drop = FALSE]
