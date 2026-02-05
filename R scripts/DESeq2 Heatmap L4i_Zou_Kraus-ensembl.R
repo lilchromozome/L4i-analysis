@@ -12,8 +12,8 @@ rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
 L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5C3_E8", "H9_E8", "RUES01_E8", "RUES02_E8",
                              "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
-# L4i_counts <- L4i_counts[,c( "RUES02_E8", "E5C3_E8",  "E32C1_E8",
-#                              "RUES02_L4i",  "E5C3_L4i", "E32C1_L4i")]
+L4i_counts <- L4i_counts[,c( "CB62_E8","E5C3_E8", "E32C6_E8", "RUES02_E8",
+                             "CB62_L4i","E5C3_L4i", "E32C6_L4i", "RUES02_L4i")]
 
 
 zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/zou_counts.csv') #MAC
@@ -63,7 +63,7 @@ dds <-DESeqDataSetFromMatrix(
 )
 dds <- DESeq(dds)
 res <- results(dds, contrast = c("condition", "L4i", "E8"))
-res <- res[!is.na(res$padj) & res$padj < 0.05 & res$log2FoldChange>0, ]
+res <- res[!is.na(res$padj) & res$padj & res$log2FoldChange>0, ]
 mat <- counts(dds, normalized = TRUE)
 mat <- mat[rownames(res), , drop = FALSE]
 mat_scaled <- t(scale(t(mat)))
@@ -181,8 +181,8 @@ for (i in seq_along(Zou_annot)) {
   # gene_set <- gene_set[gene_set$hsapiens_homolog_associated_gene_name %in% tf$tf, ]
   
   gene_set <- gene_set[gene_set$hsapiens_homolog_ensembl_gene %in% rownames(mat_scaled) &
-              gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
-              gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
+                         gene_set$hsapiens_homolog_ensembl_gene %in% rownames(zou_mat_scaled) &
+                         gene_set$ensembl_gene_id %in% rownames(mESC_mat_scaled), ]
   
   
   sub_L4i <- mat_scaled[gene_set$hsapiens_homolog_ensembl_gene, , drop = FALSE]
@@ -210,6 +210,11 @@ for (i in seq_along(Zou_annot)) {
     L4i = rowMeans(sub_L4i[, L4i_cols])
   )
   
+  heatmap_mat_L4i_isolated <- cbind(
+    sub_L4i[, E8_cols],
+    sub_L4i[, L4i_cols]
+  )
+  
   heatmap_mat_zou <- cbind(
     zygote  = rowMeans(sub_zou[, zygote_cols]),
     twoC = rowMeans(sub_zou[, twoC_cols]),
@@ -223,7 +228,7 @@ for (i in seq_along(Zou_annot)) {
     PARPKO = rowMeans(sub_mESC[, PARPKO_cols])
   )
   
-
+  
   ## maintain same order ----------------
   target_order <- rownames(heatmap_mat_L4i)[order(heatmap_mat_L4i[, "L4i"], decreasing = TRUE)]
   ordered_gene_set <- gene_set[match(target_order, gene_set$hsapiens_homolog_ensembl_gene), ]
@@ -270,18 +275,18 @@ for (i in seq_along(Zou_annot)) {
   block_h <- unit(0.75 * n_gene[i] , "mm")
   
   ht_zou <- Heatmap(heatmap_mat_zou, name = "Zou",
-                    show_row_names = FALSE, show_column_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
+                    show_row_names = FALSE, show_column_names = (i==4), cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
                     row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 90, heatmap_height = block_h,
-                    column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
-                    # , row_title = row_titles[i])
+                    column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15)
+                    , row_title = row_titles[i])
   
   ht_mESC <- Heatmap(heatmap_mat_mESC, name = "mESC",
-                     show_row_names = FALSE, show_column_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
+                     show_row_names = FALSE, show_column_names = (i==4), cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
                      row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, heatmap_height = block_h,
                      column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15))
   
-  ht_L4i <- Heatmap(heatmap_mat_L4i, name = "L4i",
-                    show_row_names = FALSE, show_column_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
+  ht_L4i <- Heatmap(heatmap_mat_L4i_isolated, name = "L4i",
+                    show_row_names = FALSE, show_column_names = (i==4), cluster_columns = FALSE, cluster_rows = FALSE, cluster_row_slices = FALSE,
                     row_names_gp = gpar(fontsize = 7), row_gap = unit(1.5, "mm"), row_title_rot = 0, heatmap_height = block_h,
                     column_names_gp = gpar(fontsize = 15), row_title_gp = gpar(fontsize = 15),
                     right_annotation = right_anno)
@@ -290,15 +295,15 @@ for (i in seq_along(Zou_annot)) {
   # labels: only interesting genes, others blank
   rowlabs_h <- ordered_gene_set$hsapiens_homolog_associated_gene_name
   rowlabs_h <- ifelse(rowlabs_h %in% interesting_genes, rowlabs_h, "")
-
-
+  
+  
   row_blocks[[z]] <- ht_zou + ht_mESC + ht_L4i
   draw(
     row_blocks[[z]], 
     ht_gap = unit(2, "mm"),
     column_title = paste0(z, ":L4i and mESC upregulated"),
     column_title_gp = gpar(fontsize = 16, fontface = "bold")
-    )
+  )
 }
 
 
@@ -310,16 +315,16 @@ pushViewport(viewport(layout = grid.layout(nrow = nr, ncol = 1, heights = hts)))
 
 for (i in seq_along(Zou_annot)) {
   z <- Zou_annot[i]
-
+  
   pushViewport(viewport(layout.pos.row = i, layout.pos.col = 1))
-
+  
   draw(
     row_blocks[[z]],
     newpage = FALSE,
     show_heatmap_legend = F,
     show_annotation_legend = F,
   )
-
+  
   popViewport()
 }
 
@@ -327,4 +332,3 @@ popViewport()
 
 # write_xlsx(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/TF_output_table.xlsx')
 output_table <- data.frame()
-

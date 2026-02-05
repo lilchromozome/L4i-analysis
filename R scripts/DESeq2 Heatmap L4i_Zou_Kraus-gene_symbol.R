@@ -14,6 +14,7 @@ L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5
                              "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i","RUES01_L4i", "RUES02_L4i")]
 
 
+
 zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/zou_counts_gene_symbol.csv') #MAC
 # zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts_gene_symbol.csv")               #Windows
 rownames(zou_embryo) <- zou_embryo$X
