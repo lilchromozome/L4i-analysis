@@ -5,22 +5,22 @@ library(circlize)
 library(grid)
 
 
-L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts_gene_symbol.csv")
+L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/RNAseq/L4i_counts_gene_symbol.csv")
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
 L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5C3_E8", "H9_E8", "RUES01_E8", "RUES02_E8",
                                    "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
 
-zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/zou_counts_gene_symbol.csv')
+zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/zou_counts_gene_symbol.csv')
 rownames(zou_embryo) <- zou_embryo$X
 zou_embryo$X <- NULL
 
-mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC_PARPKO_gene_symbol.csv')
+mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/mESC_PARPKO_gene_symbol.csv')
 rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/hmESC_KO_genes.csv')
+ff <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/mESC PARP1 KO/hmESC_KO_genes.csv')
 
 ### L4i processing ----------------------------------
 samples <- colnames(L4i_counts)
@@ -242,4 +242,4 @@ for (z in Zou_annot) {
   row_block <- ht_zou + ht_mESC + ht_L4i + right_anno
   draw(row_block, ht_gap = unit(2, "mm"))
 }
-# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/output_table.csv')
+# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/RNAseq/mESC PARP1 KO/output_table.csv')

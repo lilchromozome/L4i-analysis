@@ -6,7 +6,7 @@ library(grid)
 library(biomaRt)
 
 
-L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/L4i_counts_gene_symbol.csv") #MAC
+L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/L4i_counts_gene_symbol.csv") #MAC
 # L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts_gene_symbol.csv")             #Windows
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
@@ -15,23 +15,23 @@ L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5
 
 
 
-zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/zou_counts_gene_symbol.csv') #MAC
+zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/zou_counts_gene_symbol.csv') #MAC
 # zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts_gene_symbol.csv")               #Windows
 rownames(zou_embryo) <- zou_embryo$X
 zou_embryo$X <- NULL
 
-mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/mESC_PARPKO_gene_symbol.csv') #MAC
+mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/mESC_PARPKO_gene_symbol.csv') #MAC
 # mESC_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/mESC_PARPKO_gene_symbol.csv")                          #Windows
 rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-ff <- read.delim('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt')   #MAC
+ff <- read.delim('/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt')   #MAC
 # ff <-  read.delim("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_RNAseq_withoocyte_k6.txt") # Windows
 ff <- ff %>% rename(ICM = cluster1, maternal_oocyte = cluster2, maternal_1C_2C= cluster3, hESC=cluster4, four_cell=cluster5, eight_cell=cluster6)
 
 # PULLED FROM https://resources.aertslab.org/cistarget/tf_lists/ 
-tf <- read.delim('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/allTFs_hg38.txt')  #MAC
+tf <- read.delim('/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/allTFs_hg38.txt')  #MAC
 # tf <- read.delim('~/Dr. Z lab/L4i RNA seq/L4i-analysis/TF_names_v_1.01.txt')  #Windows
 tfs_to_add <- c( 'TPRX1', 'TPRX2', 'CPHXL', 'CPHXL2', 'DUXB',
                 "FOXQ1","RUNX1","TBXT","MIXL1","HOXA1","EBF1","EBF2","HOXD8","HOXA7",
@@ -329,5 +329,5 @@ for (i in seq_along(Zou_annot)) {
 
 popViewport()
 
-# write_xlsx(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i analysis/TF_output_table.xlsx')
+# write_xlsx(output_table, '/Users/willli/Documents/Zambidis lab/RNAseq/L4i analysis/TF_output_table.xlsx')
 output_table <- data.frame()

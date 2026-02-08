@@ -6,25 +6,25 @@ library(grid)
 library(biomaRt)
 
 
-# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts.csv") #MAC
+# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/RNAseq/L4i_counts.csv") #MAC
 L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts.csv")             #Windows
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
 L4i_counts <- L4i_counts[,c( "CB62_E8", "E32C1_E8", "E32C4_E8",  "E32C6_E8", "E5C3_E8", "H9_E8", "RUES01_E8", "RUES02_E8",
                              "CB62_L4i", "E32C1_L4i", "E32C4_L4i", "E32C6_L4i", "E5C3_L4i", "H9_L4i", "RUES01_L4i","RUES02_L4i")]
 
-# zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/zou_counts.csv') #MAC
+# zou_embryo <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/zou_counts.csv') #MAC
 zou_embryo <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/zou_counts.csv")               #Windows
 rownames(zou_embryo) <- zou_embryo$X
 zou_embryo$X <- NULL
 
-# mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC_PARPKO_gene_symbol.csv') #MAC
+# mESC_counts <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/mESC_PARPKO_gene_symbol.csv') #MAC
 mESC_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/mESC_PARP_KO.csv")                          #Windows
 rownames(mESC_counts) <- mESC_counts$X
 mESC_counts$X <- NULL
 mESC_counts <- mESC_counts[, c('WT_r1', 'WT_r2', 'WT_r3', 'PARPKO_r1', 'PARPKO_r2', 'PARPKO_r3')]
 
-# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv')   #MAC
+# ff <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/mESC PARP1 KO/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv')   #MAC
 ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
 ff$X <- NULL
 
@@ -272,4 +272,4 @@ for (z in Zou_annot) {
   row_block <- ht_zou + ht_mESC + ht_L4i + right_anno
   draw(row_block, ht_gap = unit(2, "mm"))
 }
-# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/L4i RNAseq/mESC PARP1 KO/output_table.csv')
+# write.csv(output_table, '/Users/willli/Documents/Zambidis lab/RNAseq/mESC PARP1 KO/output_table.csv')

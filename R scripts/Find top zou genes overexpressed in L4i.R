@@ -5,7 +5,7 @@ library(org.Hs.eg.db)
 library(org.Mm.eg.db)
 library(AnnotationDbi)
 
-# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i_counts_gene_symbol.csv") #MAC
+# L4i_counts <- read.csv("/Users/willli/Documents/Zambidis lab/RNAseq/L4i_counts_gene_symbol.csv") #MAC
 L4i_counts <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/L4i_counts_gene_symbol.csv") # Windows
 rownames(L4i_counts) <- L4i_counts$X
 L4i_counts$X <- NULL
@@ -35,7 +35,7 @@ L4i_mat <- t(scale(t(L4i_mat)))
 L4i_mat <- L4i_mat[complete.cases(L4i_mat), , drop = FALSE]
 
 
-# ff <- read.csv('/Users/willli/Documents/Zambidis lab/L4i RNAseq/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv') #MAC
+# ff <- read.csv('/Users/willli/Documents/Zambidis lab/RNAseq/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv') #MAC
 ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_withoocyte_Vover0_k6.csv") # Windows
 # 
 # cluster_map <- c(
@@ -52,7 +52,7 @@ ff <- read.csv("~/Dr. Z lab/L4i RNA seq/L4i-analysis/clusterekmeanZGA_Riboseq_wi
 
 
 ### https://humantfs.ccbr.utoronto.ca/download.php 
-# tf <- read.delim('/Users/willli/Documents/Zambidis lab/L4i RNAseq/L4i-analysis/TF_names_v_1.01.txt') #MAC
+# tf <- read.delim('/Users/willli/Documents/Zambidis lab/RNAseq/L4i-analysis/TF_names_v_1.01.txt') #MAC
 tf <- read.delim('~/Dr. Z lab/L4i RNA seq/L4i-analysis/TF_names_v_1.01.txt')
 tfs_to_add <- c('TPRXL', 'TPRX2', 'CPHXL', 'CPHXL2', 'DUXB',
                 "FOXQ1","RUNX1","TBXT","MIXL1","HOXA1","EBF1","EBF2","HOXD8","HOXA7",
